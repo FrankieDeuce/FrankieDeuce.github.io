@@ -164,7 +164,7 @@ startScreen.onload = function(){
 }
 
 const faces = [];
-const faceSources = [  "puff.png",  "sunglasses.gif",  "sweat.png",  "wink.png",];
+const faceSources = ["puff.png",  "sunglasses.gif",  "sweat.png",  "wink.png"];
 let facesLoaded = 0;
 for (let i = 0; i < faceSources.length; i++) {
   faces[i] = new Image();
