@@ -25,6 +25,8 @@ canvas.height = canvasHeight;
 let started=false
 let gameOver=false
 
+
+
 function checkTarget(ballX, ballY, targetX, targetY, outerRadius, scores) {
 	targetX*=canvas.width //convert as part of canvas relation
 	targetY*=canvas.height
@@ -161,6 +163,23 @@ startScreen.src = 'topGolfStart.png';
 startScreen.onload = function(){
 }
 
+const faces = [];
+const faceSources = [  "faces/puff.png",  "faces/sunglasses.gif",  "faces/sweat.png",  "faces/wink.png",];
+let facesLoaded = 0;
+for (let i = 0; i < faceSources.length; i++) {
+  faces[i] = new Image();
+  faces[i].src = faceSources[i];
+  faces[i].onload = function() {
+    facesLoaded++;
+    if (facesLoaded === faceSources.length) {
+    }
+  };
+}
+let randomIndex = 0 ;
+function drawRandomFace(x,y,width,height) {
+	const face = faces[randomIndex];  // Get the face image at the random index
+	ctx.drawImage(face, x, y,width,height);  // Draw the face image on the canvas at the random x and y coordinates
+}
 
 //load fieldImg image field.png
 const fieldImg = new Image();
@@ -178,8 +197,8 @@ let powerIncrement = 0.5; // Increment value for power
 
 //PHYSICS SETTINGS
 let golfballVelocityY = 0; // Initial vertical velocity of the golf ball
-let golfballAcceleration = canvas.height*.00012; // Fixed negative acceleration (friction) of the golf ball
-let powerRatio = -.00020//initial speed due to power
+let golfballAcceleration = canvas.height*.00014; // Fixed negative acceleration (friction) of the golf ball
+let powerRatio = -.00015//initial speed due to power
 
 let isMouseClicked = false; // Flag to track whether the mouse has been clicked
 
@@ -188,33 +207,69 @@ let scoreCurrent=0;
 let score=0;
 let topScore=0;
 let round=0;
-let totalRounds=3;
+let totalRounds=1;
 let wind=Math.round((Math.random() * 80)-40);
 
 let ballLandCooldown = 0;
 
 // Add an event listener to update the golf ball position, set the initial golf ball velocity, and set the isMouseClicked flag to true when the mouse is clicked
-canvas.addEventListener('click', (event) => {
+canvas.addEventListener('touchstart', (event) => {
+	canvas.addEventListener("touchmove", updatePosition);
+});
+// Add an event listener to update the golf ball position when the mouse moves
+function updatePosition(event){
+	if (!isMouseClicked){
+		golfballX = event.touches[0].clientX;// Update the golf ball x position to the mouse x position
+	}
+}
+
+canvas.addEventListener('touchend', (event) => {
+	releasing=true
+	if (started && !gameOver && !isMouseClicked){//move the golfball with the mouse and register click
+		canvas.removeEventListener("touchmove", updatePosition);
+		golfballVelocityY = canvas.height*powerRatio*power; // Set the initial golf ball velocity according to the current value of power
+		isMouseClicked = true; // Set the isMouseClicked flag to true
+	}
 	if (!started){
 		started=true
 	}else if (gameOver){
 		gameOver=false
-	}else if (!isMouseClicked){//move the golfball with the mouse and register click
-		golfballVelocityY = canvas.height*powerRatio*power; // Set the initial golf ball velocity according to the current value of power
-		golfballX = event.clientX; // Update the golf ball x position to the mouse x position
-		isMouseClicked = true; // Set the isMouseClicked flag to true
 	}
 });
 
-// Add an event listener to update the golf ball position when the mouse moves
-canvas.addEventListener('mousemove', (event) => {
-  if (!isMouseClicked){
-	golfballX = event.clientX; // Update the golf ball x position to the mouse x position
-  }
-});
 function draw() {
 	if (!started){
 		ctx.drawImage(startScreen, 0, 0, canvas.width, canvas.height);
+		ctx.font = `${fontSize-5}px Arial`;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillStyle = "black";
+		let line=	["",
+					"Hold and drag to set launch position...",
+					"Release to launch with power...",
+					"Account for wind...",
+					"",
+					"",
+					"",
+					"",
+					"Refreshing or leaving resets scores :(",
+					"So take a screenie of your top score! :P",
+					"",
+					"Tap to Start",
+					"<3 I love ya Wilby",
+					"",
+					"",
+					"",
+					"",
+					"Beautiful Wilbur- ",
+					"Your love warms my soul with passion",
+					"<3"]
+		let textX = canvas.width*.5
+		let textY = canvas.height*.16
+		let textOffset=canvas.height*.035
+		for(let i=0;i<line.length;i++){
+			ctx.fillText(line[i], textX, textY+(textOffset*i));
+		}
 	}
 	if (started && !gameOver){ //dont run main one frame after changing from menu to prevent doubleclick
 		if (! isMouseClicked) {//change the value of power when the mouse isnt clicked
@@ -268,11 +323,13 @@ function draw() {
 			scoreCurrent=getScore(golfballX,golfballY);//get score of round
 			score+=scoreCurrent; //tally score
 			round+=1;
+			randomIndex = Math.floor(Math.random() * faces.length);  // Get a random index between 0 and the number of faces - 1
 	  }
 	  if(ballLandCooldown==scoreBoxDisplayTime){//run code on the last frame of score box display
 		wind=Math.round((Math.random() * 80)-40);
 		if (round>=totalRounds){
 			gameOver=true;
+			round=0
 		}
 	  }
 		  
@@ -358,57 +415,50 @@ function draw() {
 
 			textY += (rectHeight / 3);
 			ctx.fillText(text3, textX, textY);
+			
+			
+			let faceX=rectX*1.2
+			let faceY=rectY*1.1
+			let faceWidth= rectWidth*.3
+			let faceHeight= rectHeight*.4
+			drawRandomFace(faceX,faceY,faceWidth,faceHeight);
 		}
 
 	}
 	if (gameOver){
-		scoreCurrent=0;
-		score=0;
-		round=0
-		
-		let rectHeight = canvas.height * 0.95;
-		let rectWidth = canvas.width * 0.95;
-		let rectX = (canvas.width / 2) - (rectWidth / 2);
-		let rectY = (canvas.height / 2) - (rectHeight / 2);
-
-		ctx.fillStyle = "lightgray";
-		ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
-
-		//adding border
-		ctx.strokeStyle = "black";
-		ctx.lineWidth = 2;
-		ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
-		let text1 = "Welcome, Wilbur, to TopGolf!"
-		let text2 = "Tap along the screen to launch"
-		let text3 = "You launch where you tap";
-		let text4 = "Power Meter shows shot power"
-		let text5 = "Refreshing resets, so take a screenshot!"
-		let text6 = "Tap to start"
-		
-		
+		if (score > topScore){
+			topScore=score
+		}
+		ctx.drawImage(startScreen, 0, 0, canvas.width, canvas.height);
 		ctx.font = `${fontSize-5}px Arial`;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.fillStyle = "black";
-
-		let textX = rectX + (rectWidth / 2);
-		let textY = rectY + (rectHeight / 12);
-		ctx.fillText(text1, textX, textY);
-
-		textY += (rectHeight / 6);
-		ctx.fillText(text2, textX, textY);
-
-		textY += (rectHeight / 6);
-		ctx.fillText(text3, textX, textY);
-		
-		textY += (rectHeight / 6);
-		ctx.fillText(text4, textX, textY);
-
-		textY += (rectHeight / 6);
-		ctx.fillText(text5, textX, textY);
-		
-		textY += (rectHeight / 6);
-		ctx.fillText(text6, textX, textY);
+		let line=	["GAME OVER",
+					"Hold and drag to set launch position...",
+					"Release to launch with power...",
+					"Account for wind...",
+					"",
+					"Top Score: "+ topScore,
+					"",
+					"",
+					"Refreshing or leaving resets scores :(",
+					"So take a screenie of your top score! :P",
+					"",
+					"Tap to Start",
+					"<3 I love ya Wilby",
+					"",
+					"",
+					"",
+					"",
+					"Beautiful Wilbur- ",
+					"My best days are those spent with you!"]
+		let textX = canvas.width*.5
+		let textY = canvas.height*.16
+		let textOffset=canvas.height*.035
+		for(let i=0;i<line.length;i++){
+			ctx.fillText(line[i], textX, textY+(textOffset*i));
+		}
 	}
 	
 	// Request another animation frame
